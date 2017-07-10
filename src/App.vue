@@ -6,43 +6,27 @@
         </header>
         <section>
             <div class="write-todo">
-                <input type="text" v-model="vue_todo">
+                <input type="text"
+                       autofocus
+                       autocomplete="off"
+                       @keyup.enter="addTodo">
             </div>
             <div class="todos-states">
                 <ul>
-                    <li>
-                        <a href="/">unfinished</a>
+                    <li :class="{checked : 'unfinished' == visibility }">
+                        <a href="#unfinished">unfinished</a>
                     </li>
-                    <li>
-                        <a href="/">finished</a>
+                    <li :class="{checked : 'finished' == visibility }">
+                        <a href="#finished">finished</a>
                     </li>
-                    <li>
-                        <a href="/">all</a>
+                    <li :class="{checked : 'all' == visibility }">
+                        <a href="#all">all</a>
                     </li>
                 </ul>
             </div>
             <div class="todo-list-box">
                 <ul class="todos-list">
-                    <li class="todo">
-                        <div class="read-todo">
-                            <input type="checkbox" class="checkbox">
-                            <label>我要吃饭打豆豆</label>
-                            <i class="delete">X</i>
-                        </div>
-                        <div class="edit-todo">
-                            <input type="text">
-                        </div>
-                    </li>
-                    <li class="todo">
-                        <div class="read-todo">
-                            <input type="checkbox" class="checkbox">
-                            <label>我要吃饭打豆豆哈哈哈哈哈哈哈哈哈哈啊哈啊哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈啊哈哈哈啊哈啊哈</label>
-                            <i class="delete">X</i>
-                        </div>
-                        <div class="edit-todo">
-                            <input type="text">
-                        </div>
-                    </li>
+                    <todo-list  v-for="todo in filterList"  :todo = 'todo'></todo-list>
                 </ul>
             </div>
         </section>
@@ -50,14 +34,60 @@
 </template>
 
 <script>
+    import { mapActions } from 'vuex'
+    import TodoList from './components/TodoList.vue'
+
+    const filters = {
+        all: todos => todos,
+        unfinished: todos => todos.filter(todo => !todo.isDone),
+        finished: todos => todos.filter(todo => todo.isDone)
+    }
+
     export default {
         name: 'app',
         data(){
             return {
-                vue_todo: ''
+                vue_todo:'',
+                visibility: 'all', //筛选数据,
+                filters:filters
             }
-        }
+        },
+        created(){
+            var that = this;
+
+            function watchHashChange() {
+                var hash = window.location.hash.slice(1);
+
+                that.visibility = hash;
+            }
+
+            watchHashChange();
+
+            window.addEventListener('hashchange', watchHashChange);
+        },
+        components:{
+            TodoList
+        },
+        computed:{
+            todos(){
+                return this.$store.state.todos
+            },
+            filterList(){
+                return filters[this.visibility] ? filters[this.visibility](this.todos) : this.todos;
+            }
+        },
+        methods:{
+
+           addTodo(e){
+                var content = e.target.value;
+               if(content.trim()){
+                   this.$store.dispatch('addTodo',{content})
+               }
+               e.target.value = '';
+           }
+        },
     }
+
 </script>
 
 <style lang="scss" scoped>
@@ -110,6 +140,9 @@
             height: 40px;
             overflow:hidden;
 
+            .checked > a{
+                border: 1px solid #cccccc;
+            }
             ul{
                 height:40px;
 
@@ -136,50 +169,7 @@
             .todos-list{
                 overflow:hidden;
 
-                .todo{
-                    min-height:60px;
 
-                    .read-todo{
-                        overflow:hidden;
-                        position:relative;
-
-                        .checkbox{
-                            display: block;
-                            width: 40px;
-                            float: left;
-                            margin-top: 5px;
-                        }
-
-                        label{
-                            float: left;
-                            display: block;
-                            width: 500px;
-                            word-wrap: break-word;
-                        }
-                        i{
-                            display: block;
-                            position: absolute;
-                            width: 40px;
-                            bottom: 2px;
-                            right: 2px;
-                        }
-
-                    }
-                    .edit-todo{
-                        display: block;
-                        width: 520px;
-                        float: right;
-                        margin-right:40px;
-
-                        & > input{
-                                width: 480px;
-                                float: left;
-                                height: 20px;
-                                padding: 5px 10px;
-                            }
-                    }
-
-                }
             }
         }
     }
